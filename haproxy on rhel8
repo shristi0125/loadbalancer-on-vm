@@ -1,0 +1,45 @@
+- hosts: webserver
+  tasks:
+  - name: "Install httpd rpm"
+    package:
+        name: "httpd"
+  - name: Installing php software
+    package:
+        name: "php"
+        state: present
+  - name: "Writing your content into target node"
+    copy:
+        dest: "/var/www/html/index.php"
+        content: "<pre>\n<?php\n\nprint `/usr/sbin/ifconfig`\n\n?>\n</pre>"
+  - name: "Starting apache services"
+    service:
+       name: "httpd"
+       state: restarted
+
+  - name: "Stop firewalld services"
+    firewalld:
+       port: "8080/tcp"
+       state: enabled
+       permanent: yes
+- hosts: loadbalancer
+  vars:
+      x: "8080"
+  tasks:
+  - name: "Install LoadBalancer Software"
+    package:
+         name: "haproxy"
+         state: present
+  - name: "Starting the haproxy services"
+    service:
+         name: "haproxy"
+         state: started
+
+  - name: "Configuring HAProxy"
+    template:
+         dest: "/etc/haproxy/haproxy.cfg"
+         src: "haproxy.cfg.j2"
+  - name: "starting haproxy service on ip {{ ansible_facts['default_ipv4']['address'] }}:{{ x }}"
+    service:
+         name: "haproxy"
+         state: restarted
+
